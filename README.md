@@ -1,3 +1,24 @@
+# Sama Network
+
+All data incurred from our daily internet usage are being hijacked, monitored and analyzed by centralized companies.Traditional blockchain systems often construct on-chain assets and contract data for privacy, yet lack of effective privacy and security protection for specific business data. Meanwhile, the emergence of AI and the explosive growth of computation power demand by small and medium AI models in research and commercialization, the trend of anti-globalization has also brought about the division of computational power. That’s when  platforms like BOINC shines as it shares the dividends brought about by the development of the rising distributed computing market. SAMA network, with its original designed consensus and business sharding separation, builds a highly secure and private distributed computational system. It provides data security and computational power for the World Wide Web without altering users’ habits.
+
+- Features -
+1.Provides high throughput business sharding node service specific to distributed businesses
+2.Full stack encryption for thorough business related data
+3.Provides high-quality distributed computation service
+
+# function 
+The reference system data of all nodes in SAMA network is dynamically uploaded to the ICP, where the dynamic reference system data includes the node’s IP address, node bandwidth, node reputation score, connectivity between nodes and neighbor nodes, etc. Reference system data, at a certain frequency ( For example, SAMA is uploaded once every 10 minutes on the whole network) to upload ICP. The application on sama needs to pull these reference system data through ICP. The application relies on these reference system data to optimize the scheduling strategy of its own application, and then delivers the data to SAMA through the interface. Network, so that the application can get a better experience.
+  SAMA network provides routing, encryption and computing services to web2 and web3 applications. Applications can upload useful data to ICP independently, and SAMA will provide an interface compatible with data upload to ICP. For example, ChatTEN, a sama use case, currently has 2000+ users. It is a distributed chatGPT client, No sign-up required, Break through area limitations, Full - stack encryption of data, Plug - and - play. Users can select useful conversation and chat data to upload to ICP for users to archive.
+
+# Provide metadata
+1. Webset URL https://sama.network/ 
+2. Canister URL of your project  https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=k2xwn-cqaaa-aaaan-qd4gq-cai
+3. Discord URL https://discord.gg/D5mBu4kJp7
+4. Twitter URL https://twitter.com/sama_network
+5. Youtube URL https://www.youtube.com/@sama_network
+
+-- implementation --
 # rust_profile
 
 Welcome to your new rust_profile project and to the internet computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
