@@ -2,7 +2,7 @@
 
 All data incurred from our daily internet usage are being hijacked, monitored and analyzed by centralized companies.Traditional blockchain systems often construct on-chain assets and contract data for privacy, yet lack of effective privacy and security protection for specific business data. Meanwhile, the emergence of AI and the explosive growth of computation power demand by small and medium AI models in research and commercialization, the trend of anti-globalization has also brought about the division of computational power. That’s when  platforms like BOINC shines as it shares the dividends brought about by the development of the rising distributed computing market. SAMA network, with its original designed consensus and business sharding separation, builds a highly secure and private distributed computational system. It provides data security and computational power for the World Wide Web without altering users’ habits.
 
-- Features -
+Features 
 - Provides high throughput business sharding node service specific to distributed businesses
 - Full stack encryption for thorough business related data
 - Provides high-quality distributed computation service
