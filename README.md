@@ -3,9 +3,9 @@
 All data incurred from our daily internet usage are being hijacked, monitored and analyzed by centralized companies.Traditional blockchain systems often construct on-chain assets and contract data for privacy, yet lack of effective privacy and security protection for specific business data. Meanwhile, the emergence of AI and the explosive growth of computation power demand by small and medium AI models in research and commercialization, the trend of anti-globalization has also brought about the division of computational power. That’s when  platforms like BOINC shines as it shares the dividends brought about by the development of the rising distributed computing market. SAMA network, with its original designed consensus and business sharding separation, builds a highly secure and private distributed computational system. It provides data security and computational power for the World Wide Web without altering users’ habits.
 
 - Features -
--Provides high throughput business sharding node service specific to distributed businesses
--Full stack encryption for thorough business related data
--Provides high-quality distributed computation service
+- Provides high throughput business sharding node service specific to distributed businesses
+- Full stack encryption for thorough business related data
+- Provides high-quality distributed computation service
 
 # function 
 The reference system data of all nodes in SAMA network is dynamically uploaded to the ICP, where the dynamic reference system data includes the node’s IP address, node bandwidth, node reputation score, connectivity between nodes and neighbor nodes, etc. Reference system data, at a certain frequency ( For example, SAMA is uploaded once every 10 minutes on the whole network) to upload ICP. The application on sama needs to pull these reference system data through ICP. The application relies on these reference system data to optimize the scheduling strategy of its own application, and then delivers the data to SAMA through the interface. Network, so that the application can get a better experience.
