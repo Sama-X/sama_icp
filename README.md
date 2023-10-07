@@ -18,9 +18,9 @@ The reference system data of all nodes in SAMA network is dynamically uploaded t
 4. Twitter URL https://twitter.com/sama_network
 5. Youtube URL https://www.youtube.com/@sama_network
 
--- implementation --
-# rust_profile
+# implementation
 
+## rust_profile
 Welcome to your new rust_profile project and to the internet computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
 
 To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
