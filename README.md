@@ -85,7 +85,7 @@ If you are hosting frontend code somewhere without using DFX, you may need to ma
 
 ### Interface ##
 #### get_self ####
-获取当前的身份id //dfx canister call rust_profile_backend get_self
+//dfx canister call rust_profile_backend get_self
 
 dfx canister --network ic call $canisterId get_self
 
