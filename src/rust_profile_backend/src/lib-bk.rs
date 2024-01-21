@@ -133,46 +133,6 @@ async fn verify(
     })
 }
 
-fn verify_iner(signature_hex: String, message: String, public_key_hex: String) -> bool {
-    let signature_bytes = match hex::decode(&signature_hex) {
-        Ok(bytes) => bytes,
-        Err(e) => {
-            eprintln!("Failed to hex-decode signature: {}", e);
-            return false;
-        }
-    };
-
-    let pubkey_bytes = match hex::decode(&public_key_hex) {
-        Ok(bytes) => bytes,
-        Err(e) => {
-            eprintln!("Failed to hex-decode public key: {}", e);
-            return false;
-        }
-    };
-
-    let message_bytes = message.as_bytes();
-
-    use k256::ecdsa::signature::Verifier;
-    let signature = match k256::ecdsa::Signature::try_from(signature_bytes.as_slice()) {
-        Ok(sig) => sig,
-        Err(e) => {
-            eprintln!("Failed to deserialize signature: {}", e);
-            return false;
-        }
-    };
-
-    let is_signature_valid = match k256::ecdsa::VerifyingKey::from_sec1_bytes(&pubkey_bytes) {
-        Ok(verify_key) => verify_key.verify(message_bytes, &signature).is_ok(),
-        Err(e) => {
-            eprintln!("Failed to deserialize sec1 encoding into public key: {}", e);
-            false
-        }
-    };
-
-    is_signature_valid
-}
-
-
 fn mgmt_canister_id() -> CanisterId {
     CanisterId::from_str(&"aaaaa-aa").unwrap()
 }
@@ -227,6 +187,8 @@ fn greet(name: String) -> String {
 }
 
 
+type ProfileStore = HashMap<Principal, HashMap<String, String>>;
+type Users = BTreeSet<Principal>;
 
 #[derive(Clone, Debug, Default, CandidType, Deserialize)]
 struct MyData {
@@ -234,19 +196,6 @@ struct MyData {
     pub value : String,
 }
 
-#[derive(Clone, Debug, Default, CandidType, Deserialize)]
-struct MyDataWithSign {
-    key: String,
-    value: String,
-    sign: String,
-}
-
-type PublicKey = String;
-type User = (Principal, PublicKey);
-
-// type ProfileStore = HashMap<Principal, HashMap<String, String>>;
-type ProfileStore = HashMap<Principal, (HashMap<String, String>, String)>;
-type Users = BTreeSet<User>;
 
 
 static mut GLOBAL_CALLER_ID: Option<String> = None;
@@ -261,14 +210,11 @@ thread_local! {
 
 #[init]
 fn init() {
-    let user = (ic_cdk::api::caller(), "".to_string());
-    USERS.with(|users| users.borrow_mut().insert(user));
+    USERS.with(|users| users.borrow_mut().insert(ic_cdk::api::caller()));
 }
 
 fn is_user() -> Result<(), String> {
-    let caller_principal = ic_cdk::api::caller();
-
-    if USERS.with(|users| users.borrow().iter().any(|(principal, _)| principal == &caller_principal)) {
+    if USERS.with(|users| users.borrow().contains(&ic_cdk::api::caller())) {
         Ok(())
     } else {
         if *MY_GLOBAL_BOOL {
@@ -291,28 +237,9 @@ fn get_self() -> Option<String> {
 }
 
 #[update(guard = "is_user")]
-fn add_key(public_key: String) -> Result<(), String> {
-    let user = (ic_cdk::api::caller(), public_key);
-
-    if USERS.with(|users| users.borrow_mut().insert(user)) {
-        Ok(())
-    } else {
-        Err("Failed to add key".to_string())
-    }
+fn add_user(principal: Principal) {
+    USERS.with(|users| users.borrow_mut().insert(principal));
 }
-
-#[query(guard = "is_user")]
-fn get_key() -> Option<String> {
-    let caller_principal = ic_cdk::api::caller();
-
-    USERS.with(|users| {
-        let borrowed_users = users.borrow();
-        let user_option = borrowed_users.iter().find(|(principal, _)| principal == &caller_principal);
-
-        user_option.map(|(_, public_key)| public_key.clone())
-    })
-}
-
 
 // 设置全局身份
 fn set_global_caller_id(caller_id: &str) {
@@ -321,52 +248,36 @@ fn set_global_caller_id(caller_id: &str) {
     }
 }
 
+#[query]
+fn get(name: String) -> Option<String> {
+    PROFILE_STORE.with(|profile_store| {
+        let principal_id = ic_cdk::api::caller();
+        if let Some(profiles_map) = profile_store.borrow().get(&principal_id) {
+            if let Some(profile_entry) = profiles_map.get(&name) {
+                return Some(profile_entry.clone());
+            }
+        }
+        None // 如果找不到相关数据则返回 None
+    })
+}
+
 
 #[update(guard = "is_user")]
-fn add(key: String, value: String, sign: String) -> Option<String> {
+fn add(key: String, value: String) -> Option<String> {
     let principal_id = ic_cdk::api::caller();
-    let public_key = "026bbf4ab2ebddf5cf11d1b76d792d3ae66c7576c5c4757a91524cbbfeb9b4b8b3".to_string();
-
-    
-    //获取公钥
-    let pk = USERS.with(|users| {
-        let borrowed_users = users.borrow();
-        borrowed_users.iter().find(|(principal, _)| principal == &principal_id)
-            .map(|(_, public_key)| public_key.clone())
-    });
-    if let Some(ref found_key) = pk {
-        println!("Found key: {}", found_key);
-    } else {
-        return Some("Public key not found.".to_string());
-    }
-    let pk = pk.unwrap_or_else(|| String::new());
-
-    //验签
-    let result = verify_iner(sign.clone(), value.clone(), pk.clone());
-    if !result {
-        return Some("Verify failed!".to_string())
-    }
-
     PROFILE_STORE.with(|profile_store| {
         let mut profile_store_borrow = profile_store.borrow_mut();
-        let profiles_map = profile_store_borrow.entry(principal_id).or_insert_with(|| (HashMap::new(), sign.clone()));
+        let profiles_map = profile_store_borrow.entry(principal_id).or_insert_with(HashMap::new);
 
         // 检查是否已经存在该数据
-        if profiles_map.0.contains_key(&key) {
+        if profiles_map.contains_key(&key) {
             return Some("Data already exists.".to_string()); // 数据已存在，返回特定数据
         }
 
         // 数据不存在，执行插入操作
-        profiles_map.0.insert(key, value);
-        let total_size: usize = profile_store_borrow
-            .values()
-            .flat_map(|(map, _)| map.iter())
-            .map(|(key, value)| key.len() + value.len())
-            .sum();
-        return Some(format!("Ok, total size is {}", total_size));
-        // return Some(total_size.to_string());
+        profiles_map.insert(key, value);
+        return Some("Ok.".to_string()); // 数据已存在，返回特定数据
     })
-
 }
 
 #[update(guard = "is_user")]
@@ -374,15 +285,15 @@ fn update(key: String, value: String) -> Option<String> {
     let principal_id = ic_cdk::api::caller();
     PROFILE_STORE.with(|profile_store| {
         let mut profile_store_borrow = profile_store.borrow_mut();
-        if let Some((profiles_map, _)) = profile_store_borrow.get_mut(&principal_id) {
+        if let Some(profiles_map) = profile_store_borrow.get_mut(&principal_id) {
             if let Some(existing_value) = profiles_map.get_mut(&key) {
-                *existing_value = value;
-                Some("Ok".to_string()) // Overwrite the existing element
+                *existing_value = value; 
+                Some("Ok".to_string()) // 覆盖现有元素
             } else {
-                Some("No matching element".to_string()) // No matching element found
+                Some("No matching element".to_string()) // 未找到匹配的元素提示
             }
         } else {
-            Some("No matching element".to_string()) // No matching element found
+            Some("No matching element".to_string()) // 未找到匹配的元素提示
         }
     })
 }
@@ -392,71 +303,48 @@ fn remove(key: String) -> Option<String> {
     let principal_id = ic_cdk::api::caller();
     PROFILE_STORE.with(|profile_store| {
         let mut profile_store_borrow = profile_store.borrow_mut();
-        if let Some((profiles_map, _)) = profile_store_borrow.get_mut(&principal_id) {
-            if profiles_map.remove(&key).is_some() {
+        if let Some(profiles_map) = profile_store_borrow.get_mut(&principal_id) {
+            if let Some(existing_value) = profiles_map.remove(&key) {
                 Some("Ok".to_string())
             } else {
-                Some("No matching element".to_string()) // No matching element found
+                Some("No matching element".to_string()) // 未找到匹配的元素提示
             }
         } else {
-            Some("No matching element".to_string()) // No matching element found
+            Some("No matching element".to_string()) // 未找到匹配的元素提示
         }
     })
 }
 
 #[query(manual_reply = true)]
-fn get_all() -> ManualReply<Option<Vec<MyDataWithSign>>> {
+fn get_all() -> ManualReply<Option<Vec<MyData>>> {
     let principal_id = ic_cdk::api::caller();
     PROFILE_STORE.with(|profile_store| {
-        if let Some((profiles_map, sign)) = profile_store.borrow().get(&principal_id) {
-            let profiles: Vec<MyDataWithSign> = profiles_map
+        if let Some(profiles_map) = profile_store.borrow().get(&principal_id) {
+            let profiles: Vec<MyData> = profiles_map
                 .iter()
-                .map(|(key, value)| MyDataWithSign {
-                    key: key.clone(),
-                    value: value.clone(),
-                    sign: sign.clone(),
-                })
+                .map(|(key, value)| MyData { key: key.clone(), value: value.clone() })
                 .collect();
             ManualReply::one(Some(profiles))
         } else {
-            ManualReply::one(None::<Vec<MyDataWithSign>>)
+            ManualReply::one(None::<Vec<MyData>>)
         }
     })
 }
 
-
-#[query]
-fn get(name: String) -> Option<(String)> {
-    PROFILE_STORE.with(|profile_store| {
-        let principal_id = ic_cdk::api::caller();
-        if let Some((profiles_map, sign)) = profile_store.borrow().get(&principal_id).cloned() {
-            if let Some(profile_entry) = profiles_map.get(&name) {
-                return Some((profile_entry.clone()));
-            }
-        }
-        None // If no relevant data is found, return None
-    })
-}
-
-
-
-// 使用 `PROFILE_STORE` 查询指定 ID 的数据，并返回 ManualReply<Option<Vec<MyDataWithSign>>>
+// 使用 `PROFILE_STORE` 查询指定 ID 的数据，并返回 ManualReply<Option<Vec<MyData>>>
 #[query(manual_reply = true)]
-fn get_by_id(id: String) -> ManualReply<Option<Vec<MyDataWithSign>>> {
+fn get_by_id(id: String) -> ManualReply<Option<Vec<MyData>>> {
     let id_principal = Principal::from_text(&id).expect("Failed to parse the id as Principal.");
     PROFILE_STORE.with(|profile_store| {
-        if let Some((profiles_map, sign)) = profile_store.borrow().get(&id_principal) {
-            let profiles: Vec<MyDataWithSign> = profiles_map
+        if let Some(profiles_map) = profile_store.borrow().get(&id_principal) {
+            let profiles: Vec<MyData> = profiles_map
                 .iter()
-                .map(|(key, value)| MyDataWithSign {
-                    key: key.clone(),
-                    value: value.clone(),
-                    sign: sign.clone(),
-                })
+                .map(|(key, value)| MyData { key: key.clone(), value: value.clone() })
                 .collect();
             ManualReply::one(Some(profiles))
         } else {
-            ManualReply::one(None::<Vec<MyDataWithSign>>)
+            ManualReply::one(None::<Vec<MyData>>)
         }
     })
 }
+

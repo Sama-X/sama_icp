@@ -5,11 +5,18 @@ type MyData = record {
 
 service : {
     "get_self": () -> (opt text);
-    //"add_user": (principal) -> ();
-    "add": (text, text) -> (opt text);
+    "add_user": (principal) -> ();
+    "add_key": (text) -> ();
+    "add": (text, text, text) -> (opt text);
     "get": (text) -> (opt text) query;
+    "get_key": () -> (opt text) query;
     "update": (text, text) -> (opt text);
     "remove": (text) -> (opt text);
     "get_all": () -> (opt vec MyData )  query;
     "get_by_id": (text) -> (opt vec MyData )  query;
+    "greet": (text) -> (text) query;
+
+    public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });
+    sign : (text) -> (variant { Ok: record { signature_hex: text; }; Err: text });
+    verify : (text, text, text) -> (variant { Ok: record { is_signature_valid: bool; }; Err: text });
 }
