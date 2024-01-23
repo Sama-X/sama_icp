@@ -6,7 +6,8 @@ type MyData = record {
 service : {
     "get_self": () -> (opt text);
     "add_user": (principal) -> ();
-    "add_key": (text) -> ();
+    "add_key": (text) -> (opt text);
+    "update_key": (text, text) -> (opt text);
     "add": (text, text, text) -> (opt text);
     "get": (text) -> (opt text) query;
     "get_key": () -> (opt text) query;

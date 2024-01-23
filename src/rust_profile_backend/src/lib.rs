@@ -133,7 +133,7 @@ async fn verify(
     })
 }
 
-fn verify_iner(signature_hex: String, message: String, public_key_hex: String) -> bool {
+fn verify_iner(message: String, signature_hex: String, public_key_hex: String) -> bool {
     let signature_bytes = match hex::decode(&signature_hex) {
         Ok(bytes) => bytes,
         Err(e) => {
@@ -290,16 +290,66 @@ fn get_self() -> Option<String> {
     Some(caller_principal.to_string())
 }
 
-#[update(guard = "is_user")]
-fn add_key(public_key: String) -> Result<(), String> {
-    let user = (ic_cdk::api::caller(), public_key);
 
-    if USERS.with(|users| users.borrow_mut().insert(user)) {
-        Ok(())
-    } else {
-        Err("Failed to add key".to_string())
-    }
+#[update(guard = "is_user")]
+fn add_key(public_key: String) -> Option<String> {
+    let caller_principal = ic_cdk::api::caller();
+    let user = (caller_principal.clone(), public_key.clone());
+
+    USERS.with(|users| {
+        // Mutable access to USERS
+        let mut users_borrow = users.borrow_mut();
+
+        if let Some(existing_user) = users_borrow.iter().find(|(principal, _)| principal == &user.0) {
+            // User already exists, check if public keys match
+            if existing_user.1 == public_key {
+                Some("User and public key already exist.".to_string())
+            } else {
+                Some("User exists, please use update_key method to update.".to_string())
+            }
+        } else {
+            // User does not exist, insert new user
+            users_borrow.insert(user);
+            Some("User added.".to_string())
+        }
+    })
 }
+
+
+#[update]
+fn update_key(new_key: String, sign: String) -> Option<String> {
+    let caller_principal = ic_cdk::api::caller();
+    let user = (caller_principal.clone(), new_key.clone());
+
+    USERS.with(|users| {
+        let mut users_borrow = users.borrow_mut();
+        
+        // Clone the BTreeSet to create a new one
+        let mut new_users_set = users_borrow.clone();
+
+        if let Some((existing_user, old_key)) = users_borrow.iter().find(|(principal, _)| principal == &user.0) {
+            let result = verify_iner(new_key.clone(), sign.clone(), old_key.clone());
+            if result {
+                // Remove the existing user from the cloned set
+                new_users_set.remove(&(existing_user.clone(), old_key.clone()));
+                // Insert the new user
+                new_users_set.insert(user);
+                
+                // Replace the original set with the modified set
+                *users_borrow = new_users_set;
+
+                Some("Update key ok!".to_string())
+            } else {
+                Some("Verify failed!".to_string())
+                // Some(format!("Verify failed! new_key: {}, sign: {}, old_key: {}", new_key, sign, old_key))
+            }
+        } else {
+            Some("User or key not exist.".to_string())
+        }
+    })
+}
+
+
 
 #[query(guard = "is_user")]
 fn get_key() -> Option<String> {
@@ -327,7 +377,6 @@ fn add(key: String, value: String, sign: String) -> Option<String> {
     let principal_id = ic_cdk::api::caller();
     let public_key = "026bbf4ab2ebddf5cf11d1b76d792d3ae66c7576c5c4757a91524cbbfeb9b4b8b3".to_string();
 
-    
     //获取公钥
     let pk = USERS.with(|users| {
         let borrowed_users = users.borrow();
@@ -342,7 +391,7 @@ fn add(key: String, value: String, sign: String) -> Option<String> {
     let pk = pk.unwrap_or_else(|| String::new());
 
     //验签
-    let result = verify_iner(sign.clone(), value.clone(), pk.clone());
+    let result = verify_iner(value.clone(), sign.clone(), pk.clone());
     if !result {
         return Some("Verify failed!".to_string())
     }
