@@ -5,7 +5,7 @@ type MyData = record {
 
 service : {
     "get_self": () -> (opt text);
-    "add_user": (principal) -> ();
+    //"add_user": (principal) -> ();
     "add_key": (text) -> (opt text);
     "update_key": (text, text) -> (opt text);
     "add": (text, text, text) -> (opt text);
@@ -14,8 +14,8 @@ service : {
     "update": (text, text) -> (opt text);
     "remove": (text) -> (opt text);
     "get_all": () -> (opt vec MyData )  query;
-    "get_by_id": (text) -> (opt vec MyData )  query;
-    "greet": (text) -> (text) query;
+    //"get_by_id": (text) -> (opt vec MyData )  query;
+    //"greet": (text) -> (text) query;
 
     public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });
     sign : (text) -> (variant { Ok: record { signature_hex: text; }; Err: text });
