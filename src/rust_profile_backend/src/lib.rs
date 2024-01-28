@@ -418,6 +418,21 @@ fn add(key: String, value: String, sign: String) -> Option<String> {
 
 }
 
+#[query(guard = "is_user")]
+fn get_amount() -> Option<String> {
+    let total_size: usize = PROFILE_STORE.with(|profile_store| {
+        let profile_store_borrow = profile_store.borrow();
+        profile_store_borrow
+            .values()
+            .flat_map(|(map, _)| map.iter())
+            .map(|(key, value)| key.len() + value.len())
+            .sum()
+    });
+
+    Some(format!("Total size is {}", total_size))
+}
+
+
 #[update(guard = "is_user")]
 fn update(key: String, value: String) -> Option<String> {
     let principal_id = ic_cdk::api::caller();

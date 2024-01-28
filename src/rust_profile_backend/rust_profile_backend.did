@@ -11,6 +11,7 @@ service : {
     "add": (text, text, text) -> (opt text);
     "get": (text) -> (opt text) query;
     "get_key": () -> (opt text) query;
+    "get_amount": () -> (opt text) query;
     "update": (text, text) -> (opt text);
     "remove": (text) -> (opt text);
     "get_all": () -> (opt vec MyData )  query;
